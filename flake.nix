@@ -10,43 +10,15 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+	LFS = "/mnt/lfs";
       in {
         devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            bash
-            binutils
-            bison
-            coreutils
-            diffutils
-            findutils
-            gawk
-            gcc
-            gnumake
-            gnugrep
-            gzip
-            linuxHeaders
-            m4
-            patch
-            perl
-            python3
-            gnused
-            gnutar
-            texinfo
-            xz
-	    git
-	    neovim
-	    yazi
-	    lazygit
-	    wget
-          ];
+          packages = with pkgs; [];
 
           shellHook = ''
-	    alias yz=yazi
-	    alias lg=lazygit
-
 	    [ $(id -u) -ne 0 ] && { echo "must run as root: \`sudo nix develop\`" ; exit 1; }
 
-	    export LFS=/mnt/lfs
+	    export LFS=${LFS}
 	    export GIT_SSH_COMMAND="ssh -F /home/guilh/.ssh/config"
 
 	    umask 022
@@ -58,7 +30,7 @@
 	    chown root:root $LFS
 	    chmod 755 $LFS
 
-            echo "Welcome to the LFS-compatible development shell!"
+	    exec sudo -u lfs nix develop /home/lfs/nix
           '';
         };
       });
