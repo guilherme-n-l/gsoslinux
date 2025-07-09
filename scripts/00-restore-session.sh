@@ -9,4 +9,4 @@ mountpoint -q $LFS || mount /dev/sda3 $LFS
 mountpoint -q $LFS/boot/efi || mount /dev/sda1 $LFS/boot/efi
 swapon --show=NAME | grep -q "^/dev/sda2$" || swapon /dev/sda2
 
-su - lfs
+exec su - lfs
