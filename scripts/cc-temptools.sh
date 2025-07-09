@@ -33,7 +33,7 @@ run_command() {
 #   run_command ../configure AWK=gawk
 #   run_command make -C include
 #   run_command make -C progs tic
-# popd || { echo "Failed to return to previous directory after Ncurses build"; read; exit 1; }
+# popd
 # 
 # run_command ./configure --prefix=/usr                \
 #                         --host=$LFS_TGT              \
@@ -118,75 +118,147 @@ run_command() {
 # run_command make && make DESTDIR=$LFS install
 #
 # Gawk
-cd $LFS/sources/gawk-5.3.1
+# cd $LFS/sources/gawk-5.3.1
+# 
+# run_command sed -i 's/extras//' Makefile.in
+# 
+# run_command ./configure --prefix=/usr   \
+#             --host=$LFS_TGT \
+#             --build=$(build-aux/config.guess)
+# 
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# # Grep
+# cd $LFS/sources/grep-3.11
+# 
+# run_command ./configure --prefix=/usr   \
+#             --host=$LFS_TGT \
+#             --build=$(./build-aux/config.guess)
+# 
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# # Gzip
+# cd $LFS/sources/gzip-1.13
+# 
+# run_command ./configure --prefix=/usr --host=$LFS_TGT
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# # Make
+# cd $LFS/sources/make-4.4.1
+# 
+# run_command ./configure --prefix=/usr   \
+#             --without-guile \
+#             --host=$LFS_TGT \
+#             --build=$(build-aux/config.guess)
+# 
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# # Patch
+# cd $LFS/sources/patch-2.7.6
+# 
+# run_command ./configure --prefix=/usr   \
+#             --host=$LFS_TGT \
+#             --build=$(build-aux/config.guess)
+# 
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# # Sed
+# cd $LFS/sources/sed-4.9
+# 
+# run_command ./configure --prefix=/usr   \
+#             --host=$LFS_TGT \
+#             --build=$(./build-aux/config.guess)
+# 
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# # Tar
+# cd $LFS/sources/tar-1.35
+# 
+# run_command ./configure --prefix=/usr         \
+#             --host=$LFS_TGT                   \
+#             --build=$(build-aux/config.guess)
+# 
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# # Xz
+# cd $LFS/sources/xz-5.6.4
+# 
+# run_command ./configure --prefix=/usr         \
+#             --host=$LFS_TGT                   \
+#             --build=$(build-aux/config.guess) \
+#             --disable-static                  \
+#             --docdir=/usr/share/doc/xz-5.6.4
+# 
+# run_command make && run_command make DESTDIR=$LFS install
+# 
+# run_command rm -v $LFS/usr/lib/liblzma.la
+# 
+# # Binutils - pass 2
+# rm -rf $LFS/sources/binutils-2.44
+# cd $LFS/sources && tar xvf binutils-2.44.tar.xz
+cd $LFS/sources/binutils-2.44
+# run_command sed '6031s/$add_dir//' -i ltmain.sh
 
-run_command sed -i 's/extras//' Makefile.in
-
-run_command ./configure --prefix=/usr   \
-            --host=$LFS_TGT \
-            --build=$(build-aux/config.guess)
+mkdir build
+cd build
+run_command ../configure       \
+    --prefix=/usr              \
+    --build=$(../config.guess) \
+    --host=$LFS_TGT            \
+    --disable-nls              \
+    --enable-shared            \
+    --enable-gprofng=no        \
+    --disable-werror           \
+    --enable-64-bit-bfd        \
+    --enable-new-dtags         \
+    --enable-default-hash-style=gnu
 
 run_command make && run_command make DESTDIR=$LFS install
+run_command rm -v $LFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
 
-# Grep
-cd $LFS/sources/grep-3.11
+# GCC - pass 2
+rm -rf $LFS/sources/gcc-14.2.0
+cd $LFS/sources && tar xvf gcc-14.2.0.tar.xz
+cd $LFS/sources/gcc-14.2.0
 
-run_command ./configure --prefix=/usr   \
-            --host=$LFS_TGT \
-            --build=$(./build-aux/config.guess)
+tar -xf ../mpfr-4.2.1.tar.xz
+mv -v mpfr-4.2.1 mpfr
+tar -xf ../gmp-6.3.0.tar.xz
+mv -v gmp-6.3.0 gmp
+tar -xf ../mpc-1.3.1.tar.gz
+mv -v mpc-1.3.1 mpc
 
-run_command make && run_command make DESTDIR=$LFS install
+case $(uname -m) in
+  x86_64)
+    run_command sed -e '/m64=/s/lib64/lib/' \
+        -i.orig gcc/config/i386/t-linux64
+  ;;
+esac
 
-# Gzip
-cd $LFS/sources/gzip-1.13
+run_command sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+    -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
 
-run_command ./configure --prefix=/usr --host=$LFS_TGT
-run_command make && run_command make DESTDIR=$LFS install
-
-# Make
-cd $LFS/sources/make-4.4.1
-
-run_command ./configure --prefix=/usr   \
-            --without-guile \
-            --host=$LFS_TGT \
-            --build=$(build-aux/config.guess)
-
-run_command make && run_command make DESTDIR=$LFS install
-
-# Patch
-cd $LFS/sources/patch-2.7.6
-
-run_command ./configure --prefix=/usr   \
-            --host=$LFS_TGT \
-            --build=$(build-aux/config.guess)
-
-run_command make && run_command make DESTDIR=$LFS install
-
-# Sed
-cd $LFS/sources/sed-4.9
-
-run_command ./configure --prefix=/usr   \
-            --host=$LFS_TGT \
-            --build=$(./build-aux/config.guess)
-
-run_command make && run_command make DESTDIR=$LFS install
-
-# Tar
-cd $LFS/sources/tar-1.35
-
-run_command ./configure --prefix=/usr         \
-            --host=$LFS_TGT                   \
-            --build=$(build-aux/config.guess)
+mkdir build
+cd build
+run_command ../configure                           \
+    --build=$(../config.guess)                     \
+    --host=$LFS_TGT                                \
+    --target=$LFS_TGT                              \
+    LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc      \
+    --prefix=/usr                                  \
+    --with-build-sysroot=$LFS                      \
+    --enable-default-pie                           \
+    --enable-default-ssp                           \
+    --disable-nls                                  \
+    --disable-multilib                             \
+    --disable-libatomic                            \
+    --disable-libgomp                              \
+    --disable-libquadmath                          \
+    --disable-libsanitizer                         \
+    --disable-libssp                               \
+    --disable-libvtv                               \
+    --enable-languages=c,c++
 
 run_command make && run_command make DESTDIR=$LFS install
+run_command ln -sv gcc $LFS/usr/bin/cc
 
-# Xz
-cd $LFS/sources/xz-5.6.4
-
-run_command ./configure --prefix=/usr         \
-            --host=$LFS_TGT                   \
-            --build=$(build-aux/config.guess) \
-            --disable-static                  \
-            --docdir=/usr/share/doc/xz-5.6.4
-
-run_command make && run_command make DESTDIR=$LFS install
